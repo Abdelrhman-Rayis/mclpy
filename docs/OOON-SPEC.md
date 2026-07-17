@@ -16,27 +16,14 @@ The marks are epistemic policies, not metaphysical claims. `bound` does
 not assert that reality is hidden; it records an auditable decision to
 withhold, and the mandatory reason makes that decision falsifiable.
 
-**Structural inspiration (Tajweed, علوم التجويد).** The mark system is
-modelled on Tajweed, the rule system of Quranic recitation, where marks
-are embedded in the text itself and carry their rules with them: no
-external rulebook is consulted at the point of use. Three properties
-carry over: self-containment (marks live in the object, not an external
-schema), local contact rules (relations emerge from adjacency and
-mark-matching, as idgham fires between adjacent letters), and
-completeness (the system is interpretable without consulting anything
-outside the text). Each mark has a Tajweed root:
-
-| Mark | Root | | Mark | Root |
-|---|---|---|---|---|
-| `↑` expose | izhar (إظهار) | | `✕` firewall | waqf (وقف) |
-| `~` bound | ikhfa (إخفاء) | | `∞` drifting | madd (مد) |
-| `⊕` join | idgham (إدغام) | | `°` self-assertion | tanwin (تنوين) |
-
-The analogy's limits are stated honestly: Tajweed's rules are grounded
-in centuries of phonological practice with determinate outputs; OOON's
-contact rules are grounded in epistemic policy theory and are a
-research prototype. The structural form is borrowed; the semantics are
-original.
+**Design principles.** Three properties govern the mark system:
+self-containment (marks live in the object itself, not in an external
+schema or policy file, so the object is self-interpreting);
+local contact rules (relations emerge from the adjacency of marked
+objects, not from global top-down declarations); and completeness (a
+document is interpretable without consulting anything outside its own
+text). Together these are what make the policy intrinsic: stripping any
+surrounding middleware cannot strip the marks.
 
 ---
 
@@ -213,7 +200,7 @@ report):
 |---|---|---|
 | Notation paradox (ontological) | `history:?~` claimed metaphysical withdrawal | `~` is an epistemic policy plus mandatory audit tag |
 | Untestable withdrawal (epistemological) | `~` with no justification | `~` is syntactically invalid without `#reason` |
-| Tajweed ungrounded (practical) | "a relation emerges" | typed contact output: relations are OOON objects with `type: full/partial` and residue |
+| Contact rules ungrounded (practical) | "a relation emerges" | typed contact output: relations are OOON objects with `type: full/partial` and residue |
 | Situated flatness (epistemological) | `(city°)` claimed neutrality | `(city° @cartographer)`: flatness is a declared stance |
 | No engineering path (pragmatic) | visual notation only | grammar + contact types + this implementation (mclpy 0.2) |
 
