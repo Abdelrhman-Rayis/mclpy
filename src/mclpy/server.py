@@ -65,6 +65,8 @@ def create_svc_app(composition: Composition | dict[str, Any],
     services = {s["id"]: s for s in doc["services"]}
     flows = {f["target"]: f for f in doc["dataflows"]}
     page = dashboard_html(doc)
+    is_v2 = doc.get("mcl_version") == "2.0"
+    audit_log: list[dict] = []
 
     app = FastAPI(title=f"mclpy SVC: {doc['title']}", version="1.0")
 
@@ -123,9 +125,19 @@ def create_svc_app(composition: Composition | dict[str, Any],
                                .isoformat(timespec="seconds"),
             },
             "validation": None,
+            "policy": None,
             "status": "ok",
             "data": payload,
         }
+        if is_v2:
+            from .ooon import enforce
+            payload, verdicts, audit = enforce(payload, comp["binding"])
+            audit_log.extend({**a, "component": cid} for a in audit)
+            envelope["policy"] = {
+                "perspective": doc.get("perspective"),
+                "verdicts": verdicts,
+            }
+            envelope["data"] = payload
         rules = comp.get("validation", [])
         if rules:
             result = validate_payload(payload, rules)
@@ -134,6 +146,13 @@ def create_svc_app(composition: Composition | dict[str, Any],
                 envelope["status"] = "rejected"
                 envelope["data"] = None   # never render failing data
         return envelope
+
+    @app.get("/audit")
+    def audit():
+        """Firewall attempt log (OOON). Spec open question resolved
+        pragmatically: audit lives outside envelopes so views cannot
+        leak it; supervisors may relocate it."""
+        return {"events": audit_log, "count": len(audit_log)}
 
     return app
 

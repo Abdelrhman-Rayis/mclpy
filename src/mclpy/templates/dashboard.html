@@ -75,6 +75,15 @@ function showEnvelope(env) {
     <div class="verdict"><span class="pf ${v.passed ? "pass" : "fail"}">${v.passed ? "PASS" : "FAIL"}</span>
     <b>${esc(v.rule)}</b> <span>${esc(v.detail)}</span></div>`).join("")
     : '<span style="color:#6b7280">no rules declared</span>';
+  let policyCard = "";
+  if (env.policy) {
+    const pv = env.policy.verdicts.length ? env.policy.verdicts.map(v => `
+      <div class="verdict"><span class="pf ${v.action === "blocked" ? "fail" : "pass"}">${esc(v.action.toUpperCase())}</span>
+      <b>${esc(v.mark)}</b> <span>${esc(v.property)}${v.reason ? " " + esc(v.reason) : ""}: ${esc(v.detail)}</span></div>`).join("")
+      : '<span style="color:#6b7280">all properties exposed</span>';
+    policyCard = `<div class="insp-card"><h3>Policy verdicts (OOON)</h3>
+      <div style="margin-bottom:4px;color:#6b7280">perspective ${esc(env.policy.perspective || "?")}</div>${pv}</div>`;
+  }
   document.getElementById("inspector").innerHTML = `
     <div style="margin-bottom:8px">${status} <b style="margin-left:6px">${esc(env.component)}</b></div>
     <div class="insp-cards">
@@ -85,6 +94,7 @@ function showEnvelope(env) {
       <div class="insp-card"><h3>Provenance</h3>${esc(p.service)}<br>
         <small style="word-break:break-all">${esc(p.url)}</small><br>${esc(p.retrievedAt)}</div>
       <div class="insp-card"><h3>Validation verdicts</h3>${verdicts}</div>
+      ${policyCard}
     </div>`;
 }
 

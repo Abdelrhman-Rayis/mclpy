@@ -47,6 +47,62 @@ class Composition:
             self._doc["description"] = description
         self._last_component: dict[str, Any] | None = None
 
+    # ---- OOON policy layer (upgrades the document to MCL 2.0) -----------
+
+    def _upgrade(self) -> None:
+        self._doc["mcl_version"] = "2.0"
+
+    def perspective(self, ident: str) -> "Composition":
+        """Declare whose representation this composition is (@ident)."""
+        if not ident.startswith("@"):
+            ident = "@" + ident
+        self._doc["perspective"] = ident
+        self._upgrade()
+        return self
+
+    def _binding_marks(self) -> dict[str, Any]:
+        if self._last_component is None:
+            raise ValueError("declare a component before attaching marks")
+        self._upgrade()
+        return self._last_component["binding"].setdefault("marks", {})
+
+    def mark_expose(self) -> "Composition":
+        self._binding_marks()["expose"] = True
+        return self
+
+    def mark_drifting(self) -> "Composition":
+        self._binding_marks()["drifting"] = True
+        return self
+
+    def mark_bound(self, reason: str) -> "Composition":
+        if not reason.startswith("#"):
+            reason = "#" + reason
+        self._binding_marks()["bound"] = reason
+        return self
+
+    def join_on(self, key: str) -> "Composition":
+        self._binding_marks()["join_key"] = key
+        return self
+
+    def mark_property(self, prop: str, *, expose: bool | None = None,
+                      bound: str | None = None, firewall: bool | None = None,
+                      drifting: bool | None = None) -> "Composition":
+        """Attach OOON marks to one payload property of the component."""
+        if self._last_component is None:
+            raise ValueError("declare a component before attaching marks")
+        self._upgrade()
+        pm = self._last_component["binding"].setdefault("property_marks", {})
+        entry = pm.setdefault(prop, {})
+        if expose is not None:
+            entry["expose"] = expose
+        if bound is not None:
+            entry["bound"] = bound if bound.startswith("#") else "#" + bound
+        if firewall is not None:
+            entry["firewall"] = firewall
+        if drifting is not None:
+            entry["drifting"] = drifting
+        return self
+
     # ---- services -------------------------------------------------------
 
     def service(self, id: str, base_url: str,
@@ -129,6 +185,14 @@ class Composition:
         self._doc["interactions"].append(
             {"source": source, "event": "select",
              "target": target, "effect": effect})
+        return self
+
+    def on_join(self, source: str, target: str, key: str) -> "Composition":
+        """MCL 2.0: a declared OOON join trigger on a shared key."""
+        self._upgrade()
+        self._doc["interactions"].append(
+            {"source": source, "event": "select", "target": target,
+             "effect": "join", "trigger": {"key": key}})
         return self
 
     # ---- output ---------------------------------------------------------

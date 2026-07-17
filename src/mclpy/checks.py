@@ -28,13 +28,15 @@ class MCLStaticError(Exception):
                          "\n".join(f"  - {v}" for v in violations))
 
 
-def load_schema() -> dict[str, Any]:
-    path = resources.files("mclpy").joinpath("schema/mcl_schema.json")
+def load_schema(version: str = "1.0") -> dict[str, Any]:
+    name = "schema/mcl_schema_v2.json" if version == "2.0" else "schema/mcl_schema.json"
+    path = resources.files("mclpy").joinpath(name)
     return json.loads(path.read_text())
 
 
 def schema_violations(doc: dict[str, Any]) -> list[str]:
-    validator = jsonschema.Draft7Validator(load_schema())
+    version = doc.get("mcl_version", "1.0")
+    validator = jsonschema.Draft7Validator(load_schema(version))
     return [f"schema: {e.message} (at {'/'.join(map(str, e.path))})"
             for e in validator.iter_errors(doc)]
 
@@ -91,6 +93,46 @@ def static_violations(doc: dict[str, Any],
                 violations.append(
                     f"interaction references unknown component "
                     f"'{inter[side]}'")
+
+    if doc.get("mcl_version") == "2.0":
+        violations.extend(_ooon_violations(doc))
+    return violations
+
+
+def _ooon_violations(doc: dict[str, Any]) -> list[str]:
+    """OOON static checks 8-12 (docs/OOON-SPEC.md section 5.1)."""
+    from .ooon import check_marks
+
+    violations: list[str] = []
+    if not doc.get("perspective"):
+        violations.append("2.0 composition declares no perspective (check 8)")
+
+    flows_by_target = {f["target"]: f for f in doc.get("dataflows", [])}
+    for comp in doc.get("components", []):
+        binding = comp.get("binding", {})
+        where = f"component '{comp['id']}'"
+        violations.extend(check_marks(binding.get("marks", {}) or {}, where))
+        for prop, pmarks in (binding.get("property_marks", {}) or {}).items():
+            violations.extend(check_marks(pmarks, f"{where}.{prop}"))
+            if pmarks.get("firewall"):
+                for rule in comp.get("validation", []):
+                    if rule.get("parameter") == prop:
+                        violations.append(
+                            f"{where}: firewalled property '{prop}' appears "
+                            f"in a validation rule (check 10)")
+
+    for inter in doc.get("interactions", []):
+        if inter.get("effect") == "join":
+            key = (inter.get("trigger") or {}).get("key")
+            if not key:
+                violations.append(
+                    "join interaction declares no trigger key (check 11)")
+                continue
+            flow = flows_by_target.get(inter["target"])
+            if flow and ("{" + key + "}") not in flow["endpoint"]:
+                violations.append(
+                    f"join key '{key}' has no slot in target dataflow "
+                    f"endpoint '{flow['endpoint']}' (check 11)")
     return violations
 
 
