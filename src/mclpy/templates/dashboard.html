@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  :root { --ink:#1f2430; --line:#d8dce3; --accent:#2563eb; --bad:#b91c1c; --ok:#15803d; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:#f6f7f9; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:12px 20px; display:flex; align-items:baseline; gap:14px; }
+  header h1 { font-size:17px; margin:0; }
+  header span { color:#6b7280; font-size:12.5px; }
+  .grid { display:grid; grid-template-columns: 1.1fr 1fr; gap:12px; padding:12px 20px; }
+  .col { display:flex; flex-direction:column; gap:12px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .card h2 { font-size:13px; margin:2px 0 8px; color:#374151; }
+  .map { height: 440px; border-radius:8px; }
+  canvas { max-height:150px; }
+  .badge { display:inline-block; border-radius:999px; padding:1px 10px; font-size:11.5px; font-weight:600; }
+  .badge.ok { background:#dcfce7; color:var(--ok); }
+  .badge.rejected { background:#fee2e2; color:var(--bad); }
+  .kpi { font-size:30px; font-weight:700; }
+  .kpi small { font-size:14px; color:#6b7280; font-weight:400; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  th, td { border-bottom:1px solid #eef0f3; text-align:left; padding:4px 8px; }
+  .reject-msg { color:var(--bad); font-size:12.5px; font-weight:600; }
+  .inspector { margin:0 20px 16px; }
+  .insp-cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:10px; }
+  .insp-card { border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:12.5px; }
+  .insp-card h3 { margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; }
+  .chip { display:inline-block; border-radius:6px; padding:1px 7px; font-family:ui-monospace,monospace; font-size:11.5px; background:#eef2ff; color:#3730a3; cursor:pointer; border:1px solid #c7d2fe; }
+  .verdict { display:flex; gap:8px; align-items:baseline; margin-bottom:5px; }
+  .verdict .pf { min-width:44px; text-align:center; border-radius:6px; font-size:10.5px; font-weight:700; padding:1px 0; }
+  .verdict .pf.pass { background:#dcfce7; color:var(--ok); }
+  .verdict .pf.fail { background:#fee2e2; color:var(--bad); }
+  .concept-info { margin-top:7px; padding:8px 10px; background:#f8fafc; border:1px dashed var(--line); border-radius:7px; font-size:12px; }
+</style>
+</head>
+<body>
+<header><h1 id="title"></h1><span id="subtitle">loading composition...</span></header>
+<div class="grid"><div class="col" id="col-left"></div><div class="col" id="col-right"></div></div>
+<div class="card inspector">
+  <h2>Semantic envelope of the last update</h2>
+  <div id="inspector">interact with the dashboard...</div>
+</div>
+
+<script>
+const COLORS = ["#2563eb", "#15803d", "#7c3aed", "#b45309", "#be185d", "#0e7490", "#475569"];
+const charts = {};
+let DOC = null;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g,
+    c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function getComponent(cid, params) {
+  const q = params ? "?" + new URLSearchParams(
+    Object.fromEntries(Object.entries(params).filter(([,v]) => v != null))) : "";
+  const r = await fetch(`/component/${cid}/data${q}`);
+  if (!r.ok) throw new Error(`${cid}: HTTP ${r.status}`);
+  return r.json();
+}
+
+function showEnvelope(env) {
+  const b = env.binding, p = env.provenance;
+  const status = env.status === "ok"
+    ? '<span class="badge ok">validated</span>'
+    : '<span class="badge rejected">rejected, data withheld</span>';
+  const verdicts = env.validation ? env.validation.verdicts.map(v => `
+    <div class="verdict"><span class="pf ${v.passed ? "pass" : "fail"}">${v.passed ? "PASS" : "FAIL"}</span>
+    <b>${esc(v.rule)}</b> <span>${esc(v.detail)}</span></div>`).join("")
+    : '<span style="color:#6b7280">no rules declared</span>';
+  document.getElementById("inspector").innerHTML = `
+    <div style="margin-bottom:8px">${status} <b style="margin-left:6px">${esc(env.component)}</b></div>
+    <div class="insp-cards">
+      <div class="insp-card"><h3>Concept binding</h3>
+        <span class="chip" onclick="conceptInfo('${esc(b.concept)}')">${esc(b.concept.split("#").pop())}</span>
+        ${b.parameter ? " · " + esc(b.parameter) : ""}${b.unit ? " [" + esc(b.unit) + "]" : ""}
+        <div id="concept-info"></div></div>
+      <div class="insp-card"><h3>Provenance</h3>${esc(p.service)}<br>
+        <small style="word-break:break-all">${esc(p.url)}</small><br>${esc(p.retrievedAt)}</div>
+      <div class="insp-card"><h3>Validation verdicts</h3>${verdicts}</div>
+    </div>`;
+}
+
+async function conceptInfo(uri) {
+  const box = document.getElementById("concept-info");
+  if (!box) return;
+  try {
+    const info = await (await fetch(`/concept?uri=${encodeURIComponent(uri)}`)).json();
+    box.innerHTML = `<div class="concept-info"><b>${esc(info.label || uri)}</b>
+      ${info.types && info.types.length ? `<span style="color:#6b7280">(${esc(info.types.join(", "))})</span>` : ""}
+      <br>${esc(info.comment || "no rdfs:comment in the ontology")}</div>`;
+  } catch (e) {
+    box.innerHTML = `<div class="concept-info">lookup failed: ${esc(e.message)}</div>`;
+  }
+}
+
+function card(comp) {
+  const el = document.createElement("div");
+  el.className = "card";
+  el.innerHTML = `<h2><span id="t-${comp.id}">${esc(comp.title || comp.id)}</span>
+    <span id="b-${comp.id}"></span></h2><div id="body-${comp.id}"></div>`;
+  return el;
+}
+
+function badge(cid, env) {
+  document.getElementById("b-" + cid).innerHTML = env.status === "ok"
+    ? '<span class="badge ok">validated</span>'
+    : '<span class="badge rejected">rejected</span>';
+}
+
+function renderTimeseries(comp, env, color) {
+  const body = document.getElementById("body-" + comp.id);
+  if (env.status !== "ok") {
+    if (charts[comp.id]) { charts[comp.id].destroy(); delete charts[comp.id]; }
+    const fails = env.validation.verdicts.filter(v => !v.passed)
+      .map(v => v.rule + ": " + v.detail);
+    body.innerHTML = `<div class="reject-msg">Update rejected by declared rules;
+      data withheld.<br>${fails.map(esc).join("<br>")}</div>`;
+    return;
+  }
+  body.innerHTML = `<canvas id="c-${comp.id}"></canvas>`;
+  const d = env.data;
+  if (d.siteLabel) document.getElementById("t-" + comp.id).textContent =
+    (comp.title || comp.id) + ": " + d.siteLabel;
+  const anoms = new Map((d.anomalies || []).map(a => [a.t, a]));
+  const datasets = [{
+    type: "line", data: d.points.map(p => p.v),
+    borderColor: color, backgroundColor: color + "22",
+    fill: !anoms.size, pointRadius: 0, borderWidth: 1.4, tension: 0.25, order: 2,
+  }];
+  if (anoms.size) datasets.push({
+    type: "scatter",
+    data: d.points.map(p => anoms.has(p.t) ? p.v : null),
+    pointBackgroundColor: d.points.map(p =>
+      (anoms.get(p.t) || {}).severity === "high" ? "#dc2626" : "#d97706"),
+    pointRadius: d.points.map(p => anoms.has(p.t) ? 3.5 : 0), order: 1,
+  });
+  if (charts[comp.id]) charts[comp.id].destroy();
+  charts[comp.id] = new Chart(document.getElementById("c-" + comp.id), {
+    data: { labels: d.points.map(p => p.t.slice(0, anoms.size ? 10 : 16).replace("T", " ")), datasets },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { maxTicksLimit: 8, font: { size: 10 } }, grid: { display: false } },
+        y: { title: { display: true, text: d.unit || (comp.binding || {}).unit || "", font: { size: 10 } },
+             ticks: { font: { size: 10 } } } },
+      animation: false,
+    }
+  });
+}
+
+function renderKpi(comp, env) {
+  const body = document.getElementById("body-" + comp.id);
+  if (env.status !== "ok") { body.innerHTML = '<div class="reject-msg">rejected</div>'; return; }
+  const d = env.data;
+  const v = d.value !== undefined ? d.value
+    : (d.points && d.points.length ? d.points[d.points.length - 1].v : "?");
+  body.innerHTML = `<div class="kpi">${typeof v === "number" ? v.toLocaleString() : esc(v)}
+    <small>${esc(d.unit || (comp.binding || {}).unit || "")}</small></div>`;
+}
+
+function renderTable(comp, env) {
+  const body = document.getElementById("body-" + comp.id);
+  if (env.status !== "ok") { body.innerHTML = '<div class="reject-msg">rejected</div>'; return; }
+  const rows = env.data.rows || [];
+  if (!rows.length) { body.innerHTML = "<i>no rows</i>"; return; }
+  const cols = Object.keys(rows[0]);
+  body.innerHTML = `<table><thead><tr>${cols.map(c => "<th>" + esc(c) + "</th>").join("")}</tr></thead>
+    <tbody>${rows.map(r => "<tr>" + cols.map(c => "<td>" + esc(r[c]) + "</td>").join("") + "</tr>").join("")}</tbody></table>`;
+}
+
+async function loadComponent(comp, params) {
+  const env = await getComponent(comp.id, params);
+  badge(comp.id, env);
+  showEnvelope(env);
+  if (comp.kind === "timeseries")
+    renderTimeseries(comp, env, COLORS[DOC.components.indexOf(comp) % COLORS.length]);
+  else if (comp.kind === "kpi") renderKpi(comp, env);
+  else if (comp.kind === "table") renderTable(comp, env);
+  return env;
+}
+
+async function renderMap(comp) {
+  const body = document.getElementById("body-" + comp.id);
+  body.innerHTML = `<div class="map" id="m-${comp.id}"></div>`;
+  const env = await getComponent(comp.id);
+  badge(comp.id, env);
+  showEnvelope(env);
+  if (env.status !== "ok") return;
+  const map = L.map("m-" + comp.id);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+  const targets = (DOC.interactions || []).filter(i => i.source === comp.id && i.event === "select");
+  const markers = [];
+  const firstFeedFor = {};
+  env.data.features.forEach(f => {
+    const [lon, lat] = f.geometry.coordinates;
+    const p = f.properties || {};
+    const m = L.marker([lat, lon]).addTo(map);
+    markers.push(m);
+    const feeds = (p.feeds || []).map(x => `${x.observedProperty} [${x.unit}]`).join(", ");
+    m.bindPopup(`<b>${esc(p.label || "")}</b><br>${esc(p.sourceSystem || "")}<br>${esc(feeds)}<br><small>${esc(p.uri || "")}</small>`);
+    m.on("click", () => {
+      targets.forEach(t => {
+        const target = DOC.components.find(c => c.id === t.target);
+        const feed = (p.feeds || []).find(x =>
+          x.observedProperty === (target.binding || {}).parameter);
+        if (feed) loadComponent(target, { feed: feed.id });
+      });
+    });
+    targets.forEach(t => {
+      const target = DOC.components.find(c => c.id === t.target);
+      const feed = (p.feeds || []).find(x =>
+        x.observedProperty === (target.binding || {}).parameter);
+      if (feed && !(t.target in firstFeedFor)) firstFeedFor[t.target] = feed.id;
+    });
+  });
+  if (markers.length) map.fitBounds(L.featureGroup(markers).getBounds().pad(0.15));
+  else map.setView([0, 0], 2);
+  for (const t of targets) {
+    if (firstFeedFor[t.target])
+      await loadComponent(DOC.components.find(c => c.id === t.target),
+                          { feed: firstFeedFor[t.target] });
+  }
+}
+
+async function boot() {
+  DOC = (await (await fetch("/composition")).json()).document;
+  document.getElementById("title").textContent = DOC.title;
+  document.title = DOC.title;
+  document.getElementById("subtitle").textContent =
+    `MCL ${DOC.mcl_version}, ${DOC.components.length} components composed declaratively`;
+  const left = document.getElementById("col-left");
+  const right = document.getElementById("col-right");
+  const interactionTargets = new Set((DOC.interactions || []).map(i => i.target));
+  if (!DOC.components.some(c => c.kind === "map")) {
+    left.remove();
+    document.querySelector(".grid").style.gridTemplateColumns = "1fr";
+  }
+  DOC.components.forEach(c =>
+    (c.kind === "map" ? left : right).appendChild(card(c)));
+  for (const comp of DOC.components) {
+    if (comp.kind === "map") await renderMap(comp);
+    else if (!interactionTargets.has(comp.id)) {
+      const flow = DOC.dataflows.find(f => f.target === comp.id);
+      if (flow && !flow.endpoint.includes("{feed}")) await loadComponent(comp);
+    }
+  }
+}
+
+boot().catch(e => {
+  document.getElementById("subtitle").textContent = "error: " + e.message;
+});
+</script>
+</body>
+</html>

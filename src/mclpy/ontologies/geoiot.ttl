@@ -1,0 +1,135 @@
+@prefix giot: <http://www.geoiot.net/ontology#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix geo:  <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+<http://www.geoiot.net/ontology>
+    a owl:Ontology ;
+    rdfs:label "GeoIoT ontology (reference implementation subset)" ;
+    rdfs:comment "Compact subset of the GeoIoT ontology used by the MicroMaps reference implementation. Follows the Site - Asset - Device - Feed - Series chain of the MicroMaps framework, with canonical identity, WGS84 location, explicit units and PROV provenance." ;
+    owl:versionInfo "ref-1.0" .
+
+#################################################################
+# Classes: the Site - Asset - Device - Feed - Series chain
+#################################################################
+
+giot:Site a owl:Class ;
+    rdfs:label "Site" ;
+    rdfs:comment "A geographic site under observation, for example a campus, a river gauging station or a grid region." .
+
+giot:Asset a owl:Class ;
+    rdfs:label "Asset" ;
+    rdfs:comment "A physical or virtual asset that belongs to a site, for example a river gauge installation or a weather mast." .
+
+giot:Device a owl:Class ;
+    rdfs:label "Device" ;
+    rdfs:comment "A sensing device attached to an asset." .
+
+giot:Feed a owl:Class ;
+    rdfs:label "Feed" ;
+    rdfs:comment "A named stream of observations produced by a device for one observed property in one unit." .
+
+giot:Series a owl:Class ;
+    rdfs:label "Series" ;
+    rdfs:comment "A time-ordered collection of measurements belonging to a feed." .
+
+giot:Measurement a owl:Class ;
+    rdfs:label "Measurement" ;
+    rdfs:comment "A single timestamped value inside a series." .
+
+giot:CanonicalIdentity a owl:Class ;
+    rdfs:label "Canonical identity" ;
+    rdfs:comment "The single stable identity that source-system records resolve to." .
+
+giot:AnomalyEvent a owl:Class ;
+    rdfs:label "Anomaly event" ;
+    rdfs:comment "An observation flagged as anomalous by a detection method over a feed's series, following the point / contextual / collective taxonomy of Cook, Misirli and Fan (IEEE IoT Journal, 2020). Carries a score and the methods that fired, so consumers can threshold or rank." .
+
+#################################################################
+# Object properties (the chain plus location and provenance)
+#################################################################
+
+giot:hasAsset a owl:ObjectProperty ;
+    rdfs:domain giot:Site ; rdfs:range giot:Asset ;
+    rdfs:label "has asset" .
+
+giot:hasDevice a owl:ObjectProperty ;
+    rdfs:domain giot:Asset ; rdfs:range giot:Device ;
+    rdfs:label "has device" .
+
+giot:hasFeed a owl:ObjectProperty ;
+    rdfs:domain giot:Device ; rdfs:range giot:Feed ;
+    rdfs:label "has feed" .
+
+giot:hasSeries a owl:ObjectProperty ;
+    rdfs:domain giot:Feed ; rdfs:range giot:Series ;
+    rdfs:label "has series" .
+
+giot:partOfSeries a owl:ObjectProperty ;
+    rdfs:domain giot:Measurement ; rdfs:range giot:Series ;
+    rdfs:label "part of series" .
+
+giot:belongsToSite a owl:ObjectProperty ;
+    rdfs:domain giot:Asset ; rdfs:range giot:Site ;
+    rdfs:label "belongs to site" .
+
+giot:hasCanonicalIdentity a owl:ObjectProperty ;
+    rdfs:range giot:CanonicalIdentity ;
+    rdfs:label "has canonical identity" .
+
+#################################################################
+# Datatype properties: identity, location, units, values, time
+#################################################################
+
+giot:sourceSystem a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Name of the source system a record was extracted from (provenance at the record level)." .
+
+giot:sourceIdentifier a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The identifier the source system uses for this entity." .
+
+giot:observedProperty a owl:DatatypeProperty ;
+    rdfs:domain giot:Feed ; rdfs:range xsd:string ;
+    rdfs:comment "The property observed by the feed, for example waterLevel, airTemperature, carbonIntensity." .
+
+giot:hasUnit a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Unit of measure carried explicitly with every feed and measurement (Gap 2: unit semantics)." .
+
+giot:hasValue a owl:DatatypeProperty ;
+    rdfs:domain giot:Measurement ; rdfs:range xsd:double .
+
+giot:hasTimestamp a owl:DatatypeProperty ;
+    rdfs:domain giot:Measurement ; rdfs:range xsd:dateTime .
+
+giot:plausibleMin a owl:DatatypeProperty ;
+    rdfs:domain giot:Feed ; rdfs:range xsd:double ;
+    rdfs:comment "Lower bound of the plausible range declared for the feed; consumed by SVC validation rules." .
+
+giot:plausibleMax a owl:DatatypeProperty ;
+    rdfs:domain giot:Feed ; rdfs:range xsd:double ;
+    rdfs:comment "Upper bound of the plausible range declared for the feed; consumed by SVC validation rules." .
+
+giot:interpolatedFraction a owl:DatatypeProperty ;
+    rdfs:domain giot:Feed ; rdfs:range xsd:double ;
+    rdfs:comment "Fraction of the feed's values that the source marked as interpolated rather than directly measured (a DQV-style fitness-for-use signal, Gap 4)." .
+
+giot:onFeed a owl:ObjectProperty ;
+    rdfs:domain giot:AnomalyEvent ; rdfs:range giot:Feed ;
+    rdfs:label "on feed" .
+
+giot:anomalyScore a owl:DatatypeProperty ;
+    rdfs:domain giot:AnomalyEvent ; rdfs:range xsd:double ;
+    rdfs:comment "Robust anomaly score of the flagged observation (distance from normal in MAD-scaled sigmas or shift units)." .
+
+giot:detectionMethod a owl:DatatypeProperty ;
+    rdfs:domain giot:AnomalyEvent ; rdfs:range xsd:string ;
+    rdfs:comment "Detector that fired: point, contextual, or changepoint (one triple per method)." .
+
+giot:severity a owl:DatatypeProperty ;
+    rdfs:domain giot:AnomalyEvent ; rdfs:range xsd:string ;
+    rdfs:comment "Ensemble severity: high when several methods agree or the score is extreme, else medium." .

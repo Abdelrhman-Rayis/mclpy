@@ -1,0 +1,14 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix farm: <http://example.org/farm#> .
+
+<http://example.org/farm> a owl:Ontology ;
+    rdfs:label "Tiny farm ontology (mclpy example)" .
+
+farm:Barn a owl:Class ;
+    rdfs:label "Barn" ;
+    rdfs:comment "A farm building holding livestock or equipment." .
+
+farm:SensorSeries a owl:Class ;
+    rdfs:label "Sensor series" ;
+    rdfs:comment "A time-ordered series of readings from a barn sensor." .
