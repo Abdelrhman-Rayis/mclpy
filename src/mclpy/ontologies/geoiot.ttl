@@ -1,4 +1,4 @@
-@prefix giot: <http://www.geoiot.net/ontology#> .
+@prefix giot: <http://www.geoiot.org/ontology#> .
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
@@ -6,7 +6,7 @@
 @prefix geo:  <http://www.w3.org/2003/01/geo/wgs84_pos#> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
 
-<http://www.geoiot.net/ontology>
+<http://www.geoiot.org/ontology>
     a owl:Ontology ;
     rdfs:label "GeoIoT ontology (reference implementation subset)" ;
     rdfs:comment "Compact subset of the GeoIoT ontology used by the MicroMaps reference implementation. Follows the Site - Asset - Device - Feed - Series chain of the MicroMaps framework, with canonical identity, WGS84 location, explicit units and PROV provenance." ;

@@ -116,7 +116,7 @@ class Namespace:
         return self._base
 
 
-GEOIOT = Namespace("http://www.geoiot.net/ontology#")
+GEOIOT = Namespace("http://www.geoiot.org/ontology#")
 
 _default: RDFOntology | None = None
 
