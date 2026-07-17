@@ -16,6 +16,28 @@ The marks are epistemic policies, not metaphysical claims. `bound` does
 not assert that reality is hidden; it records an auditable decision to
 withhold, and the mandatory reason makes that decision falsifiable.
 
+**Structural inspiration (Tajweed, علوم التجويد).** The mark system is
+modelled on Tajweed, the rule system of Quranic recitation, where marks
+are embedded in the text itself and carry their rules with them: no
+external rulebook is consulted at the point of use. Three properties
+carry over: self-containment (marks live in the object, not an external
+schema), local contact rules (relations emerge from adjacency and
+mark-matching, as idgham fires between adjacent letters), and
+completeness (the system is interpretable without consulting anything
+outside the text). Each mark has a Tajweed root:
+
+| Mark | Root | | Mark | Root |
+|---|---|---|---|---|
+| `↑` expose | izhar (إظهار) | | `✕` firewall | waqf (وقف) |
+| `~` bound | ikhfa (إخفاء) | | `∞` drifting | madd (مد) |
+| `⊕` join | idgham (إدغام) | | `°` self-assertion | tanwin (تنوين) |
+
+The analogy's limits are stated honestly: Tajweed's rules are grounded
+in centuries of phonological practice with determinate outputs; OOON's
+contact rules are grounded in epistemic policy theory and are a
+research prototype. The structural form is borrowed; the semantics are
+original.
+
 ---
 
 ## 1. Marks
@@ -29,6 +51,7 @@ withhold, and the mandatory reason makes that decision falsifiable.
 | `8` (`∞`) | drifting | Value is an interval or distribution, never a point. |
 | `@ident` | perspective | Whose representation this object is. MANDATORY per object. |
 | `#ident` | reason | Machine-readable justification; MANDATORY wherever `~` appears. |
+| `°` | self-assertion | Automatic on every object header: the object exists on its own terms, prior to any property list. Not user-written; emitted by serialisers. |
 
 The Unicode symbols (`↑ ~ ⊕ ✕ ∞ @ #`) are the canonical *display* form.
 The ASCII aliases in parentheses are accepted by parsers. JSON and
@@ -180,7 +203,60 @@ validation layer:
 - The machine schema for both lives in
   `src/mclpy/schema/mcl_schema_v2.json`.
 
-## 7. What OOON is not
+## 7. Design lineage: the five critiques and the v2 answers
+
+OOON v2 (this specification) is shaped by five recorded criticisms of
+v1 (philosopher and supervisor review, documented in the OOON research
+report):
+
+| Critique | v1 | v2 answer (this spec) |
+|---|---|---|
+| Notation paradox (ontological) | `history:?~` claimed metaphysical withdrawal | `~` is an epistemic policy plus mandatory audit tag |
+| Untestable withdrawal (epistemological) | `~` with no justification | `~` is syntactically invalid without `#reason` |
+| Tajweed ungrounded (practical) | "a relation emerges" | typed contact output: relations are OOON objects with `type: full/partial` and residue |
+| Situated flatness (epistemological) | `(city°)` claimed neutrality | `(city° @cartographer)`: flatness is a declared stance |
+| No engineering path (pragmatic) | visual notation only | grammar + contact types + this implementation (mclpy 0.2) |
+
+## 8. Candidate v3 marks (recorded, NOT implemented)
+
+Four further epistemic states are proposed and tested against real
+data in the research report; they are recorded here for roadmap
+purposes and are deliberately absent from MCL 2.0:
+
+- `≈` inferred: derived, not directly observed (for example computed centroids);
+- contested: no authoritative value exists, without splitting into two perspectives;
+- `→` delegated: ask another object (for example `speed-limit:30→@highways`);
+- `∂` approximate: shared at deliberately reduced precision.
+
+Equally recorded is what NOT to add: negation (firewall and absence
+already serve), confidence scores (false precision; `~`, `≈`, `∂`
+handle uncertainty without quantifying it), and mandatory markers
+(schema validation is OWL/SHACL's job).
+
+## 9. Positioning: the six clusters and three closest precursors
+
+A prior literature review across six clusters (vagueness and
+uncertainty; provenance and perspective; policy and access control;
+critical GIS; geospatial linked data; self-describing data) found the
+mechanisms existing separately but never composed: no system lets a
+spatial data object declare which of its properties are exposed,
+bounded, unknown or drifting, inside its own serialisation. The three
+closest precursors, and where each stops:
+
+- **Galton and Hood (2005), anchoring relations**: epistemically
+  motivated ("state only what we know for certain") but operates at
+  the representation level, not object serialisation.
+- **Sacco and Passant (2011), Privacy Preference Ontology**:
+  per-triple access policy, but maintained in a separate document, not
+  embedded in the object.
+- **Kirrane and Akaichi (2023), GUCON**: RDF-star-attached policy
+  metadata, mechanistically closest, but addresses usage-control
+  compliance, not epistemic visibility classification.
+
+The Phase-4 positioning survey (ODRL, DPV, GeoXACML, PPO, GUCON) MUST
+formalise this comparison before any published novelty claim.
+
+## 10. What OOON is not
 
 - Not access control: an optional ACL layer may still sit above
   (deployment concern). OOON makes policy travel with data so that

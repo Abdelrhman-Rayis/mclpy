@@ -22,6 +22,18 @@ OOON_CONTEXT = "https://www.geoiot.org/ooon#"
 
 MARK_FIELDS = ("expose", "bound", "firewall", "drifting", "join_key")
 
+# Canonical display symbols (OOON-SPEC section 1). ASCII aliases exist for
+# authoring; these are what users SEE in envelopes, dashboards and docs.
+SYMBOLS = {
+    "expose": "↑",      # ↑
+    "bound": "~",
+    "join_key": "⊕",    # ⊕
+    "firewall": "✕",    # ✕
+    "drifting": "∞",    # ∞
+    "perspective": "@",
+    "reason": "#",
+}
+
 
 class OOONError(Exception):
     """A mark set violates OOON well-formedness (spec section 1)."""
@@ -119,29 +131,29 @@ def enforce(payload: dict[str, Any],
                 del out[prop]
             audit.append({"event": "firewall", "property": prop,
                           "present": present, "at": now})
-            verdicts.append({"mark": "firewall", "property": prop,
+            verdicts.append({"mark": "firewall", "symbol": SYMBOLS["firewall"], "property": prop,
                              "action": "blocked",
                              "detail": "access refused and logged"})
         elif pmarks.get("bound"):
             reason = pmarks["bound"]
             if present:
                 del out[prop]
-            verdicts.append({"mark": "bound", "property": prop,
+            verdicts.append({"mark": "bound", "symbol": SYMBOLS["bound"], "property": prop,
                              "action": "withheld", "reason": reason,
                              "detail": f"withheld under {reason}"})
         elif pmarks.get("drifting") and present:
-            verdicts.append({"mark": "drifting", "property": prop,
+            verdicts.append({"mark": "drifting", "symbol": SYMBOLS["drifting"], "property": prop,
                              "action": "interval",
                              "detail": "value is an interval, not a point"})
 
     if marks.get("drifting"):
         out["intervalValued"] = True
-        verdicts.append({"mark": "drifting", "property": "(series)",
+        verdicts.append({"mark": "drifting", "symbol": SYMBOLS["drifting"], "property": "(series)",
                          "action": "interval",
                          "detail": "series declared interval-valued; render "
                                    "uncertainty, not a line"})
     if marks.get("bound"):
-        verdicts.append({"mark": "bound", "property": "(component)",
+        verdicts.append({"mark": "bound", "symbol": SYMBOLS["bound"], "property": "(component)",
                          "action": "withheld", "reason": marks["bound"],
                          "detail": f"component withheld under {marks['bound']}"})
         out = {}
