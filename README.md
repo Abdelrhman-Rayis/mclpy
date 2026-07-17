@@ -139,4 +139,4 @@ pytest -q
 ## License
 
 MIT. The bundled GeoIoT ontology is part of the GeoIoT project
-(geoiot.net).
+(geoiot.org).
