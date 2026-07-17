@@ -1,0 +1,70 @@
+{
+  "mcl_version": "2.0",
+  "title": "Campus energy with OOON policy (draft example)",
+  "description": "Phase-0 illustration of MCL 2.0: the composition carries a perspective, residence-hall electricity is bound under a privacy reason, precise coordinates are firewalled, interpolated air-quality values are drifting, and the map-to-chart interaction is a declared join trigger.",
+  "perspective": "@estates-team",
+  "services": [
+    { "id": "observation", "base_url": "http://127.0.0.1:7302", "description": "feeds and series" }
+  ],
+  "components": [
+    {
+      "id": "sitemap",
+      "kind": "map",
+      "title": "Monitored sites",
+      "binding": {
+        "concept": "http://www.geoiot.org/ontology#Site",
+        "property_marks": {
+          "label": { "expose": true },
+          "preciseCoordinates": { "firewall": true }
+        }
+      }
+    },
+    {
+      "id": "energychart",
+      "kind": "timeseries",
+      "title": "Building electricity",
+      "binding": {
+        "concept": "http://www.geoiot.org/ontology#Series",
+        "parameter": "electricity",
+        "unit": "kW",
+        "marks": { "expose": true, "join_key": "feed" },
+        "property_marks": {
+          "residenceHallSeries": { "bound": "#privacy" }
+        }
+      },
+      "validation": [
+        { "type": "unit", "expected": "kW" },
+        { "type": "range", "min": 0, "max": 10000 }
+      ]
+    },
+    {
+      "id": "airchart",
+      "kind": "timeseries",
+      "title": "NO2 (interpolation-aware)",
+      "binding": {
+        "concept": "http://www.geoiot.org/ontology#Series",
+        "parameter": "no2",
+        "unit": "ug/m3",
+        "marks": { "expose": true, "drifting": true }
+      },
+      "validation": [
+        { "type": "unit", "expected": "ug/m3" }
+      ]
+    }
+  ],
+  "dataflows": [
+    { "target": "sitemap", "service": "observation", "endpoint": "/entities" },
+    { "target": "energychart", "service": "observation", "endpoint": "/feeds/{feed}/series" },
+    { "target": "airchart", "service": "observation", "endpoint": "/feeds/{feed}/series" }
+  ],
+  "interactions": [
+    {
+      "source": "sitemap",
+      "event": "select",
+      "target": "energychart",
+      "effect": "join",
+      "trigger": { "key": "feed" },
+      "description": "OOON join trigger: contact on the shared feed key re-binds the chart."
+    }
+  ]
+}
