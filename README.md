@@ -3,6 +3,10 @@
 **The Microservice Composition Language (MCL) for Python: declare
 ontology-bound, validated data interfaces and run them.**
 
+📖 **New here? Read the wiki: <https://abdelrhman-rayis.github.io/mclpy/>** — a
+beginner-friendly guide that takes a developer with no semantic-web background
+from install to their own validated dashboard.
+
 MCL is a small declarative language in which you state the components of a
 data interface (maps, time-series charts, KPIs, tables), the services or
 Python functions that feed them, the ontology concepts they are bound to,
