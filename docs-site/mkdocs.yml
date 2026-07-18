@@ -1,0 +1,93 @@
+site_name: MCL
+site_description: Declare dashboards you can trust. A developer guide to the Microservice Composition Language and the Semantic View Controller.
+site_url: https://abdelrhman-rayis.github.io/mclpy/
+repo_url: https://github.com/Abdelrhman-Rayis/mclpy
+repo_name: Abdelrhman-Rayis/mclpy
+copyright: MIT licensed. The GeoIoT ontology is part of the GeoIoT project (geoiot.org).
+docs_dir: docs
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  features:
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Start here:
+      - index.md
+      - Install and quickstart: start/install.md
+      - Coming from Grafana: start/from-grafana.md
+  - Foundations:
+      - Why dashboards lie: foundations/why-dashboards-lie.md
+      - Ontologies for JSON developers: foundations/ontologies-for-json-devs.md
+      - GeoIoT in one picture: foundations/geoiot-in-one-picture.md
+      - Declare, check, enforce: foundations/declare-check-enforce.md
+      - The semantic envelope: foundations/semantic-envelope.md
+  - Tutorials:
+      - 1. Your first validated dashboard: tutorials/first-dashboard.md
+      - 2. Real open data: tutorials/real-data.md
+      - 3. Bring your own ontology: tutorials/own-ontology.md
+      - 4. Break it on purpose: tutorials/break-it.md
+      - 5. Policy marks (MCL 2.0 preview): tutorials/policy-marks.md
+  - Reference:
+      - The MCL document: reference/mcl-document.md
+      - The static checks: reference/static-checks.md
+      - Validation rules: reference/validation-rules.md
+  - Explanation:
+      - Architecture: explanation/architecture.md
+      - The research behind it: explanation/research.md
+  - Glossary: glossary.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - abbr
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Abdelrhman-Rayis/mclpy
